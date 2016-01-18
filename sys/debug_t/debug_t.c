@@ -39,8 +39,6 @@ void debug_timeref_reset(void)
     gettimeofday(&time_ref, 0);
 }
 
-
-
 void debug_timestamp(void)
 {
     struct timeval time_tmp;
