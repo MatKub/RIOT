@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "sched.h"
 #include "thread.h"
+#include "debug_t.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,23 @@ extern "C" {
  */
 #ifdef DEVELHELP
 #include "cpu_conf.h"
+
+#ifdef MODULE_DEBUG_T
+
+#define DEBUG_PRINT(...) \
+    do { \
+        if ((sched_active_thread == NULL) || (sched_active_thread->stack_size > THREAD_EXTRA_STACKSIZE_PRINTF)) { \
+            debug_timestamp(); \
+            printf("%s", time_stamp); \
+            printf(__VA_ARGS__); \
+        } \
+        else { \
+            puts("Cannot debug, stack too small"); \
+        } \
+    } while (0)
+
+#else
+
 #define DEBUG_PRINT(...) \
     do { \
         if ((sched_active_thread == NULL) || (sched_active_thread->stack_size > THREAD_EXTRA_STACKSIZE_PRINTF)) { \
@@ -59,8 +77,13 @@ extern "C" {
             puts("Cannot debug, stack too small"); \
         } \
     } while (0)
+
+#endif
+
 #else
+
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
+
 #endif
 
 /**
