@@ -145,47 +145,62 @@ void auto_init(void)
 
 #ifdef MODULE_AT86RF2XX
     extern void auto_init_at86rf2xx(void);
+    DEBUG("Auto init at86rf2xx\n");
     auto_init_at86rf2xx();
 #endif
 
 #ifdef MODULE_ENCX24J600
     extern void auto_init_encx24j600(void);
+    DEBUG("Auto init encx24j600\n");
     auto_init_encx24j600();
 #endif
 
 #ifdef MODULE_ENC28J60
     extern void auto_init_enc28j60(void);
+    DEBUG("Auto init enc28j60\n");
     auto_init_enc28j60();
 #endif
 
 #ifdef MODULE_GNRC_SLIP
     extern void auto_init_slip(void);
+    DEBUG("Auto init slip\n");
     auto_init_slip();
 #endif
 
 #ifdef MODULE_CC110X
     extern void auto_init_cc110x(void);
+    DEBUG("Auto init cc110x\n");
     auto_init_cc110x();
+#endif
+
+#ifdef MODULE_CC112X
+    extern void auto_init_cc112x(void);
+    DEBUG("Auto init cc112x\n");
+    auto_init_cc112x();
 #endif
 
 #ifdef MODULE_XBEE
     extern void auto_init_xbee(void);
+    DEBUG("Auto init xbee\n");
     auto_init_xbee();
 #endif
 
 #ifdef MODULE_KW2XRF
     extern void auto_init_kw2xrf(void);
+    DEBUG("Auto init kw2xrf\n");
     auto_init_kw2xrf();
 #endif
 
 #ifdef MODULE_NETDEV2_TAP
     extern void auto_init_netdev2_tap(void);
+    DEBUG("Auto init netdev2\n");
     auto_init_netdev2_tap();
 #endif
 
 #endif /* MODULE_AUTO_INIT_GNRC_NETIF */
 
 #ifdef MODULE_GNRC_IPV6_NETIF
+    DEBUG("Auto init gnrc_ipv6_netif_init_by_dev\n");
     gnrc_ipv6_netif_init_by_dev();
 #endif
 
@@ -199,18 +214,22 @@ void auto_init(void)
 #endif
 #ifdef MODULE_LSM303DLHC
     extern void auto_init_lsm303dlhc(void);
+    DEBUG("Auto init lsm303dlhc\n");
     auto_init_lsm303dlhc();
 #endif
 #ifdef MODULE_LPS331AP
     extern void auto_init_lps331ap(void);
+    DEBUG("Auto init lps331ap\n");
     auto_init_lps331ap();
 #endif
 #ifdef MODULE_ISL29020
     extern void auto_init_isl29020(void);
+    DEBUG("Auto init isl29020\n");
     auto_init_isl29020();
 #endif
 #ifdef MODULE_L3G4200D
     extern void auto_init_l3g4200d(void);
+    DEBUG("Auto init l3g4200d\n");
     auto_init_l3g4200d();
 #endif
 
