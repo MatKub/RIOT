@@ -173,14 +173,6 @@ int cc112x_setup(cc112x_t *dev, const cc112x_params_t *params)
     return ret;
 }
 
-void cc112x_sleep(cc112x_t *dev){
-
-}
-
-void cc112x_wake(cc112x_t *dev){
-
-}
-
 uint8_t cc112x_set_address(cc112x_t *dev, uint8_t address)
 {
     DEBUG("%s:%s:%u setting address %u\n", RIOT_FILE_RELATIVE, __func__,
@@ -196,25 +188,6 @@ uint8_t cc112x_set_address(cc112x_t *dev, uint8_t address)
     return 0;
 }
 
-void cc112x_set_monitor(cc112x_t *dev, uint8_t mode)
-{
-    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-    /* If mode true no address check is performed, otherwise
-     * address checking is enabled, broadcast frames address
-     * is set to 0x00.
-     */
-    cc112x_write_register(dev, CC112X_PKT_CFG1, mode ? 0x01 : 0x21);
-}
-
-void cc112x_setup_rx_mode(cc112x_t *dev)
-{
-    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-
-    /* Stay in RX mode until end of packet, RX timeout disabled */
-    cc112x_write_reg(dev, CC112X_RFEND_CFG1, 0x0E);
-    cc112x_switch_to_rx(dev);
-}
-
 void cc112x_switch_to_rx(cc112x_t *dev)
 {
     DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
@@ -227,6 +200,11 @@ void cc112x_switch_to_rx(cc112x_t *dev)
 
     dev->radio_state = RADIO_RX;
 
+    /*
+     * Asserted when sync word has been received and de-asserted at the
+     * end of the packet. Will de-assert when the optional address and/or
+     * length check fails or the RX FIFO overflows/underflows.
+     */
     cc112x_write_reg(dev, CC112X_IOCFG2, 0x06);
     /* Go into receiving mode */
     cc112x_strobe(dev, CC112X_SRX);
@@ -243,7 +221,7 @@ void cc112x_wakeup_from_rx(cc112x_t *dev)
 
     DEBUG("cc112x: switching to idle mode\n");
 
-    /* Go into transmit mode then back to IDLE mode */
+    /* Back to IDLE mode */
     cc112x_strobe(dev, CC112X_SIDLE);
     dev->radio_state = RADIO_IDLE;
 }
@@ -329,7 +307,10 @@ int cc112x_rd_set_mode(cc112x_t *dev, cc112x_radio_mode_t mode)
     switch(mode) {
     case RADIO_MODE_ON:
         DEBUG("cc112x: switching to RX mode\n");
-        cc112x_setup_rx_mode(dev); /* Set chip to desired mode */
+        DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        /* Stay in RX mode until end of packet, RX timeout disabled, goes to IDLE after packet received*/
+        cc112x_write_reg(dev, CC112X_RFEND_CFG1, 0x0E);
+        cc112x_switch_to_rx(dev);
         break;
 
     case RADIO_MODE_OFF:

@@ -75,9 +75,11 @@ extern "C" {
             {CC112X_AGC_CS_THR, 0x03},
             {CC112X_AGC_CFG1, 0xA9},
             {CC112X_AGC_CFG0, 0xC0},
-            {CC112X_FIFO_CFG, 0x40},
+            /* FIFO_THR */
+            {CC112X_FIFO_CFG, (127-20)},
             {CC112X_FS_CFG, 0x12},
             {CC112X_PKT_CFG2, 0x10},
+            /* If address check, shoult be 0x65 */
             {CC112X_PKT_CFG1, 0x45},
             {CC112X_PKT_CFG0, 0x20},
             {CC112X_PA_CFG0, 0x7B},

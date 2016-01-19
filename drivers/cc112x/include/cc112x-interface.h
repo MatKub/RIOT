@@ -45,7 +45,7 @@ cc112x_marc_state cc112x_get_marc_state(cc112x_t *dev);
 char *cc112x_state_to_text(uint8_t state);
 int cc112x_rd_set_mode(cc112x_t *dev, cc112x_radio_mode_t mode);
 uint8_t cc112x_get_buffer_pos(cc112x_t *dev);
-void cc112x_isr_handler(cc112x_t *dev, void(*callback)(void*), void*arg);
+void cc112x_isr_handler(void*arg);
 void cc112x_setup_rx_mode(cc112x_t *dev);
 void cc112x_switch_to_pwd(cc112x_t *dev);
 void cc112x_switch_to_rx(cc112x_t *dev);

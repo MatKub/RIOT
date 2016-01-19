@@ -27,7 +27,7 @@ extern "C" {
 #define DEBUG_SYNC_ENABLE   1
 #define DEBUG_SYNC_GPIO     GPIO_T(GPIO_PORT_A, 13)
 #define DEBUG_SYNC_PULLUP   GPIO_PULLUP
-#define DEUBG_SYNC_FLANK    GPIO_FALLING
+#define DEBUG_SYNC_FLANK    GPIO_FALLING
 
 /**
  * Define the nominal CPU core clock in this board

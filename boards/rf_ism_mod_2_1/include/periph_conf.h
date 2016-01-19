@@ -139,8 +139,8 @@ extern "C" {
 #define UART_2_TX_PIN       4
 #define UART_2_RX_PIN       5
 /* buffering setting */
-#define UART_2_ENABLE_BUF   0
-#define UART_2_BUFSIZE     2024
+#define UART_2_ENABLE_BUF   1
+#define UART_2_BUFSIZE     4024
 /** @} */
 
 ///**

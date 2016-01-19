@@ -154,36 +154,34 @@ static int _set(netdev2_t *dev, netopt_t opt, void *value, size_t value_len)
     return 0;
 }
 
-static void _netdev2_cc112x_isr(void *arg)
-{
-    netdev2_t *netdev2 = (netdev2_t*)arg;
-    netdev2->event_callback(netdev2, NETDEV2_EVENT_ISR, netdev2->isr_arg);
-}
+//static void _netdev2_cc112x_isr(void *arg)
+////{
+////    netdev2_t *netdev2 = (netdev2_t*)arg;
+////    netdev2->event_callback(netdev2, NETDEV2_EVENT_ISR, netdev2->isr_arg);
+////}
 
-static void _netdev2_cc112x_rx_callback(void *arg)
-{
-    DEBUG("%s:%u\n", __func__, __LINE__);
-    netdev2_t *netdev2 = (netdev2_t*)arg;
-    cc112x_t *cc112x = &((netdev2_cc112x_t*)arg)->cc112x;
-    gpio_irq_disable(cc112x->params.gpio2);
-    netdev2->event_callback(netdev2, NETDEV2_EVENT_RX_COMPLETE,
-            netdev2->isr_arg);
-}
-
-static void _isr(netdev2_t *dev)
-{
-    cc112x_t *cc112x = &((netdev2_cc112x_t*)dev)->cc112x;
-    cc112x_isr_handler(cc112x, _netdev2_cc112x_rx_callback, (void*)dev);
-}
+//static void _netdev2_cc112x_rx_callback(void *arg)
+//{
+//    DEBUG("%s:%u\n", __func__, __LINE__);
+//    netdev2_t *netdev2 = (netdev2_t*)arg;
+//    cc112x_t *cc112x = &((netdev2_cc112x_t*)arg)->cc112x;
+//    gpio_irq_disable(cc112x->params.gpio2);
+//    netdev2->event_callback(netdev2, NETDEV2_EVENT_RX_COMPLETE, netdev2->isr_arg);
+//}
+//
+//static void _isr(netdev2_t *dev)
+//{
+//    cc112x_t *cc112x = &((netdev2_cc112x_t*)dev)->cc112x;
+//    cc112x_isr_handler(cc112x, _netdev2_cc112x_rx_callback, (void*)dev);
+//}
 
 static int _init(netdev2_t *dev)
 {
     DEBUG("%s:%u\n", __func__, __LINE__);
-
+    netdev2_cc112x_t *cc112x_netdev = ((netdev2_cc112x_t*)dev);
     cc112x_t *cc112x = &((netdev2_cc112x_t*)dev)->cc112x;
 
-    gpio_init_int(cc112x->params.gpio2, GPIO_PULLDOWN, GPIO_BOTH,
-            &_netdev2_cc112x_isr, (void*)dev);
+    gpio_init_int(cc112x->params.gpio2, GPIO_PULLDOWN, GPIO_BOTH, &cc112x_isr_handler, (void*)cc112x_netdev);
 
     gpio_irq_disable(cc112x->params.gpio2);
 
@@ -193,8 +191,13 @@ static int _init(netdev2_t *dev)
     return 0;
 }
 
-const netdev2_driver_t netdev2_cc112x_driver = {.send = _send, .recv = _recv,
-        .init = _init, .get = _get, .set = _set, .isr = _isr};
+const netdev2_driver_t netdev2_cc112x_driver = {
+        .send = _send,
+        .recv = _recv,
+        .init = _init,
+        .get = _get,
+        .isr = NULL,
+        .set = _set};
 
 int netdev2_cc112x_setup(netdev2_cc112x_t *netdev2_cc112x,
         const cc112x_params_t *params)

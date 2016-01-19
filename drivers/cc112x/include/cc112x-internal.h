@@ -135,51 +135,6 @@ typedef enum {
 } cc112x_radio_mode_t;
 
 /**
- * @brief   CC112x register configuration
- */
-//typedef struct {
-//    uint8_t _IOCFG2;      /**< GDO2 output pin configuration */
-//    uint8_t _IOCFG1;      /**< GDO1 output pin configuration */
-//    uint8_t _IOCFG0;      /**< GDO0 output pin configuration */
-//    uint8_t _FIFOTHR;     /**< RX FIFO and TX FIFO thresholds */
-//    uint8_t _SYNC1;       /**< Sync word, high byte */
-//    uint8_t _SYNC0;       /**< Sync word, low byte */
-//    uint8_t _PKTLEN;      /**< Packet length */
-//    uint8_t _PKTCTRL1;    /**< Packet automation control */
-//    uint8_t _PKTCTRL0;    /**< Packet automation control */
-//    uint8_t _ADDR;        /**< Device address */
-//    uint8_t _CHANNR;      /**< Channel number */
-//    uint8_t _FSCTRL1;     /**< Frequency synthesizer control */
-//    uint8_t _FSCTRL0;     /**< Frequency synthesizer control */
-//    uint8_t _FREQ2;       /**< Frequency control word, high byte */
-//    uint8_t _FREQ1;       /**< Frequency control word, middle byte */
-//    uint8_t _FREQ0;       /**< Frequency control word, low byte */
-//    uint8_t _MDMCFG4;     /**< Modem configuration */
-//    uint8_t _MDMCFG3;     /**< Modem configuration */
-//    uint8_t _MDMCFG2;     /**< Modem configuration */
-//    uint8_t _MDMCFG1;     /**< Modem configuration */
-//    uint8_t _MDMCFG0;     /**< Modem configuration */
-//    uint8_t _DEVIATN;     /**< Modem deviation setting */
-//    uint8_t _MCSM2;       /**< Main Radio Control State Machine configuration */
-//    uint8_t _MCSM1;       /**< Main Radio Control State Machine configuration */
-//    uint8_t _MCSM0;       /**< Main Radio Control State Machine configuration */
-//    uint8_t _FOCCFG;      /**< Frequency Offset Compensation configuration */
-//    uint8_t _BSCFG;       /**< Bit Synchronization configuration */
-//    uint8_t _AGCCTRL2;    /**< AGC control */
-//    uint8_t _AGCCTRL1;    /**< AGC control */
-//    uint8_t _AGCCTRL0;    /**< AGC control */
-//    uint8_t _WOREVT1;     /**< High byte Event 0 timeout */
-//    uint8_t _WOREVT0;     /**< Low byte Event 0 timeout */
-//    uint8_t _WORCTRL;     /**< Wake On Radio control */
-//    uint8_t _FREND1;      /**< Front end RX configuration */
-//    uint8_t _FREND0;      /**< Front end TX configuration */
-//    uint8_t _FSCAL3;      /**< Frequency synthesizer calibration */
-//    uint8_t _FSCAL2;      /**< Frequency synthesizer calibration */
-//    uint8_t _FSCAL1;      /**< Frequency synthesizer calibration */
-//    uint8_t _FSCAL0;      /**< Frequency synthesizer calibration */
-//} cc112x_reg_t;
-
-/**
  * @brief   CC112x radio configuration
  */
 //typedef struct {
