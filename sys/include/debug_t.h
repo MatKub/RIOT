@@ -20,10 +20,8 @@ typedef struct {
     gpio_flank_t flank;
 } debug_time_sync_t;
 
-#ifndef DEBUG_SYNC_ENABLE
 void debug_callback(void *arg);
 void debug_timeref_init(void);
-#endif
 
 void debug_timeref_reset(void);
 void debug_timestamp(void);

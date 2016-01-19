@@ -17,20 +17,18 @@
 struct timeval time_ref;
 char time_stamp[20];
 
-debug_time_sync_t debug_time_sync;
-
-#ifndef DEBUG_SYNC_ENABLE
-static void debug_callback(void *arg)
+#ifdef DEBUG_SYNC_ENABLE
+void debug_callback(void *arg)
 {
-    gpio_irq_disable(debug_time_sync.gpio);
+    gpio_irq_disable(DEBUG_SYNC_GPIO);
     debug_timeref_reset();
-    gpio_irq_enable(debug_time_sync.gpio);
+    gpio_irq_enable(DEBUG_SYNC_GPIO);
 }
 
 void debug_timeref_init(void)
 {
-    gpio_init_int(debug_time_sync.gpio, debug_time_sync.pullup, debug_time_sync.flank, &debug_callback, 0);
-    gpio_irq_enable(debug_time_sync.gpio);
+    gpio_init_int(DEBUG_SYNC_GPIO, DEBUG_SYNC_PULLUP, DEBUG_SYNC_FLANK, &debug_callback, 0);
+    gpio_irq_enable(DEBUG_SYNC_GPIO);
 }
 #endif
 
