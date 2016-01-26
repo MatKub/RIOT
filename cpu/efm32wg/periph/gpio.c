@@ -57,78 +57,79 @@ static inline uint32_t _pin(gpio_t gpio) {
 	return (uint32_t) (gpio & 0xff);
 }
 
-int gpio_init(gpio_t gpio, gpio_dir_t mode, gpio_pp_t pullup) {
+int gpio_init(gpio_t gpio, gpio_dir_t mode, gpio_pp_t pullup)
+{
 
-	if (GPIO_PULLUP == pullup) {
-		/* High */
-		gpio_set(gpio);
-		if(GPIO_DIR_IN == mode){
-			mode = GPIO_DIR_INPUT_PULL;
-		}
-	} else if (GPIO_PULLDOWN == pullup){
-		/* Low */
-		gpio_clear(gpio);
-		if(GPIO_DIR_IN == mode){
-			mode = GPIO_DIR_INPUT_PULL;
-		}
-	}
+    if(GPIO_PULLUP == pullup) {
+        /* High */
+        gpio_set(gpio);
+        if(GPIO_DIR_IN == mode) {
+            mode = GPIO_DIR_INPUT_PULL;
+        }
+    } else if(GPIO_PULLDOWN == pullup) {
+        /* Low */
+        gpio_clear(gpio);
+        if(GPIO_DIR_IN == mode) {
+            mode = GPIO_DIR_INPUT_PULL;
+        }
+    }
 
-	/* There are two registers controlling the pins for each port. The MODEL
-	 * register controls pins 0-7 and MODEH controls pins 8-15. */
-	if (_pin(gpio) < 8) {
-		GPIO->P[_port(gpio)].MODEL = (GPIO->P[_port(gpio)].MODEL
-				& ~(0xF << (_pin(gpio) * 4))) | (mode << (_pin(gpio) * 4));
-	} else {
-		GPIO->P[_port(gpio)].MODEH = (GPIO->P[_port(gpio)].MODEH
-				& ~(0xF << ((_pin(gpio) - 8) * 4)))
-				| (mode << ((_pin(gpio) - 8) * 4));
-	}
+    /* There are two registers controlling the pins for each port. The MODEL
+     * register controls pins 0-7 and MODEH controls pins 8-15. */
+    if(_pin(gpio) < 8) {
+        GPIO->P[_port(gpio)].MODEL = (GPIO->P[_port(gpio)].MODEL
+        & ~(0xF << (_pin(gpio) * 4))) | (mode << (_pin(gpio) * 4));
+    } else {
+        GPIO->P[_port(gpio)].MODEH = (GPIO->P[_port(gpio)].MODEH
+                & ~(0xF << ((_pin(gpio) - 8) * 4)))
+                | (mode << ((_pin(gpio) - 8) * 4));
+    }
 
-	return 0;
+    return 0;
 }
 
-int gpio_init_int(gpio_t gpio, gpio_pp_t pullup, gpio_flank_t flank,
-		gpio_cb_t cb, void *arg) {
-	uint32_t tmp = 0;
+int gpio_init_int(gpio_t gpio, gpio_pp_t pullup, gpio_flank_t flank, gpio_cb_t cb, void *arg)
+{
+    uint32_t tmp = 0;
 
-	gpio_init(gpio, GPIO_DIR_INPUT, pullup);
+    gpio_init(gpio, GPIO_DIR_INPUT, pullup);
 
-	/* configure and save exti configuration struct */
-	exti_chan[_pin(gpio)].cb = cb;
-	exti_chan[_pin(gpio)].arg = arg;
-	/* There are two registers controlling the interrupt configuration:
-	 * The EXTIPSELL register controls pins 0-7 and EXTIPSELH controls
-	 * pins 8-15. */
-	if (_pin(gpio) < 8) {
-		GPIO->EXTIPSELL = (GPIO->EXTIPSELL & ~(0xF << (4 * _pin(gpio))))
-				| (_port(gpio) << (4 * _pin(gpio)));
-	} else {
-		tmp = _pin(gpio) - 8;
-		GPIO->EXTIPSELH = (GPIO->EXTIPSELH & ~(0xF << (4 * tmp)))
-				| (_port(gpio) << (4 * tmp));
-	}
-	/* configure the active edge(s) */
-	switch (flank) {
-	case GPIO_RISING:
-		GPIO->EXTIRISE |= 1 << _pin(gpio);
-		break;
-	case GPIO_FALLING:
-		GPIO->EXTIFALL |= 1 << _pin(gpio);
-		break;
-	case GPIO_BOTH:
-		GPIO->EXTIRISE |= 1 << _pin(gpio);
-		GPIO->EXTIFALL |= 1 << _pin(gpio);
-		break;
-	}
-	/* clear any pending requests */
-	GPIO->IFC = 1 << _pin(gpio);
-	/* enable interrupt for EXTI line */
-	NVIC_EnableIRQ(GPIO_ODD_IRQn);
-	NVIC_SetPriority(GPIO_ODD_IRQn, 0);
-	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-	NVIC_SetPriority(GPIO_EVEN_IRQn, 0);
+    /* configure and save exti configuration struct */
+    exti_chan[_pin(gpio)].cb = cb;
+    exti_chan[_pin(gpio)].arg = arg;
+    /* There are two registers controlling the interrupt configuration:
+     * The EXTIPSELL register controls pins 0-7 and EXTIPSELH controls
+     * pins 8-15. */
+    if(_pin(gpio) < 8) {
+        GPIO->EXTIPSELL = (GPIO->EXTIPSELL & ~(0xF << (4 * _pin(gpio))))
+                | (_port(gpio) << (4 * _pin(gpio)));
+    } else {
+        tmp = _pin(gpio) - 8;
+        GPIO->EXTIPSELH = (GPIO->EXTIPSELH & ~(0xF << (4 * tmp)))
+                | (_port(gpio) << (4 * tmp));
+    }
+    /* configure the active edge(s) */
+    switch(flank) {
+    case GPIO_RISING:
+        GPIO->EXTIRISE |= 1 << _pin(gpio);
+        break;
+    case GPIO_FALLING:
+        GPIO->EXTIFALL |= 1 << _pin(gpio);
+        break;
+    case GPIO_BOTH:
+        GPIO->EXTIRISE |= 1 << _pin(gpio);
+        GPIO->EXTIFALL |= 1 << _pin(gpio);
+        break;
+    }
+    /* clear any pending requests */
+    GPIO->IFC = 1 << _pin(gpio);
+    /* enable interrupt for EXTI line */
+    NVIC_EnableIRQ(GPIO_ODD_IRQn);
+    NVIC_SetPriority(GPIO_ODD_IRQn, 0);
+    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+    NVIC_SetPriority(GPIO_EVEN_IRQn, 0);
 
-	return 0;
+    return 0;
 }
 
 void gpio_init_af(gpio_t pin, gpio_af_t af) {
@@ -136,12 +137,12 @@ void gpio_init_af(gpio_t pin, gpio_af_t af) {
 }
 
 void gpio_irq_enable(gpio_t gpio) {
-	GPIO->IFC |= (1 << _pin(gpio));
+//	GPIO->IFC |= (1 << _pin(gpio));
 	GPIO->IEN |= (1 << _pin(gpio));
 }
 
 void gpio_irq_disable(gpio_t gpio) {
-    GPIO->IFC |= (1 << _pin(gpio));
+//    GPIO->IFC |= (1 << _pin(gpio));
 	GPIO->IEN &= ~(1 <<_pin(gpio));
 }
 
