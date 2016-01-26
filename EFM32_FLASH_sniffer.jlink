@@ -1,0 +1,5 @@
+h
+erase
+loadbin ./applications/sniffer/bin/rf_ism_mod_2_1/sniffer.bin,0
+r
+q
