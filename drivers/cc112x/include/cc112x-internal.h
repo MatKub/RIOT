@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #define CC112X_RXBUF_SIZE           (2)
-#define CC112X_MAX_DATA_LENGTH      (255)
+#define CC112X_MAX_DATA_LENGTH      (230)
 
 #define CC112X_HEADER_LENGTH        (3)     /**< Header covers SRC, DST and
                                                  FLAGS */

@@ -205,10 +205,14 @@ void cc112x_switch_to_rx(cc112x_t *dev)
      * end of the packet. Will de-assert when the optional address and/or
      * length check fails or the RX FIFO overflows/underflows.
      */
-    cc112x_write_reg(dev, CC112X_IOCFG2, 0x06);
     /* Go into receiving mode */
     cc112x_strobe(dev, CC112X_SRX);
     /* Assert on received sync word, deassert when packed failed or ends */
+    cc112x_write_reg(dev, CC112X_IOCFG2, 0x06);
+
+    while(gpio_read(dev->params.gpio2)){
+        puts("HIGH");
+    }
 
     gpio_irq_enable(dev->params.gpio2);
 }
