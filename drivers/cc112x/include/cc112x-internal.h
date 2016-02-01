@@ -122,7 +122,6 @@ typedef struct __attribute__((packed))
 typedef struct {
     uint8_t rssi;                           /**< RSSI value */
     uint8_t lqi;                            /**< link quality indicator */
-    uint8_t pos;                            /**< I have no clue. */
     cc112x_pkt_t packet;                    /**< whole packet */
 } cc112x_pkt_buf_t;
 

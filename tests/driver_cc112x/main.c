@@ -28,19 +28,20 @@
 #include "random.h"
 
 #include "cc112x_params.h"
-#include "../../drivers/cc112x/include/gnrc_netdev2_cc112x.h"
-#include "./../../drivers/cc112x/include/cc112x-netdev2.h"
-
 #include <time.h>
 #include <sys/time.h>
+#include "../../drivers/cc112x/include/cc112x-netdev2.h"
+#include "../../drivers/cc112x/include/gnrc_netdev2_cc112x.h"
 
 #define ENABLE_DEBUG       1
+#define LOG_LEVEL LOG_INFO
 #include "debug.h"
-#include "debug_t.h"
+//#include "debug_t.h"
+#include "log.h"
 
-#define SENDER  0
+#define SENDER  1
 #define SRC_ADDR    11
-#define DATA_BYTES_COUNT    230
+#define DATA_BYTES_COUNT    120
 
 #define CC112X_MAC_PRIO          (THREAD_PRIORITY_MAIN - 3)
 #define CC112X_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE + 1024)
@@ -54,9 +55,15 @@ static char _stack[CC112X_MAC_STACKSIZE];
 int main(void)
 {
     genrand_init(1234567);
-    debug_timeref_init();
+//    debug_timeref_init();
 
     DEBUG("CC112x device driver test\n");
+    LOG(LOG_INFO, "info\n");
+    LOG(LOG_WARNING, "warning\n");
+    LOG(LOG_ALL, "all\n");
+    LOG(LOG_DEBUG, "debug\n");
+    LOG(LOG_ERROR, "error\n");
+    LOG(LOG_NONE, "none\n");
     msg_t msg;
 
     msg_t msg2;
@@ -151,7 +158,7 @@ int main(void)
             /* send message */
             msg_send(&msg, res);
 
-            xtimer_usleep(10000000/4);
+            xtimer_usleep(10000000/3);
 
         }
     } else {

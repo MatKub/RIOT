@@ -30,11 +30,12 @@
 #include "log.h"
 
 #include "cc112x.h"
-#include "./include/cc112x-defaultsettings.h"
-#include "cc112x-defines.h"
-#include "./include/cc112x-interface.h"
-#include "cc112x-internal.h"
-#include "cc112x-spi.h"
+
+#include "../cc112x/include/cc112x-defaultsettings.h"
+#include "../cc112x/include/cc112x-defines.h"
+#include "../cc112x/include/cc112x-interface.h"
+#include "../cc112x/include/cc112x-internal.h"
+#include "../cc112x/include/cc112x-spi.h"
 
 
 #define ENABLE_DEBUG    (0)
@@ -209,10 +210,6 @@ void cc112x_switch_to_rx(cc112x_t *dev)
     cc112x_strobe(dev, CC112X_SRX);
     /* Assert on received sync word, deassert when packed failed or ends */
     cc112x_write_reg(dev, CC112X_IOCFG2, 0x06);
-
-    while(gpio_read(dev->params.gpio2)){
-        puts("HIGH");
-    }
 
     gpio_irq_enable(dev->params.gpio2);
 }

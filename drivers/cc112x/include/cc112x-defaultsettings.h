@@ -14,7 +14,7 @@
 #ifndef CC110X_DEFAULTSETTINGS_H
 #define CC110X_DEFAULTSETTINGS_H
 
-#include "cc112x-defines.h"
+#include "../../cc112x/include/cc112x-defines.h"
 
 #ifdef __cplusplus
 extern "C" {

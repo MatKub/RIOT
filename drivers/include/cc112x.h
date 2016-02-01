@@ -60,8 +60,6 @@ struct cc112x {
     uint8_t radio_address;                      /**< current Radio address */
 
     cc112x_pkt_buf_t pkt_buf;                   /**< RX/TX buffer */
-//    void (*isr_cb)(cc112x_t *dev, void* arg);   /**< isr callback */
-//    void *isr_cb_arg;                           /**< isr callback argument */
 };
 
 /**
