@@ -137,12 +137,12 @@ void gpio_init_af(gpio_t pin, gpio_af_t af) {
 }
 
 void gpio_irq_enable(gpio_t gpio) {
-//	GPIO->IFC |= (1 << _pin(gpio));
+	GPIO->IFC |= (1 << _pin(gpio));
 	GPIO->IEN |= (1 << _pin(gpio));
 }
 
 void gpio_irq_disable(gpio_t gpio) {
-//    GPIO->IFC |= (1 << _pin(gpio));
+    GPIO->IFC |= (1 << _pin(gpio));
 	GPIO->IEN &= ~(1 <<_pin(gpio));
 }
 
