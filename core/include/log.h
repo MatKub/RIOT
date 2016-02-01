@@ -36,6 +36,8 @@
  extern "C" {
 #endif
 
+#include "debug_t.h"
+
 /**
  * @brief defined log levels
  *
@@ -89,12 +91,22 @@ enum {
 #include "log_module.h"
 #else
 #include <stdio.h>
-
 /**
  * @brief Default log_write function, just maps to printf
  */
+#ifdef MODULE_DEBUG_T
+
+#define log_write(level, ...) \
+    debug_timestamp(); \
+    printf("%s", time_stamp); \
+    printf(__VA_ARGS__)
+#else
+
 #define log_write(level, ...) printf(__VA_ARGS__)
-#endif
+
+#endif //MODULE_DEBUG_T
+
+#endif //
 
 #ifdef __cplusplus
 }
