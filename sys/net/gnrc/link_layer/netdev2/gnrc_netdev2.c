@@ -23,6 +23,7 @@
 #include "kernel.h"
 #include "msg.h"
 #include "thread.h"
+#include "xtimer.h"
 
 #include "net/gnrc.h"
 #include "net/gnrc/nettype.h"
@@ -138,8 +139,12 @@ static void *_gnrc_netdev2_thread(void *args)
             case GNRC_NETAPI_MSG_TYPE_SND:
                 DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_SND received\n");
                 gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t *)msg.content.ptr;
-                gnrc_netdev2->send(gnrc_netdev2, pkt);
-                break;
+                int ret;
+                do {
+                    xtimer_usleep(1000);
+                    ret = gnrc_netdev2->send(gnrc_netdev2, pkt);
+                } while(-EBUSY == ret);
+            break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 /* read incoming options */
                 opt = (gnrc_netapi_opt_t *)msg.content.ptr;

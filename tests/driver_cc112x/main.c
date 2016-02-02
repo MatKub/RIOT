@@ -33,18 +33,16 @@
 #include "../../drivers/cc112x/include/cc112x-netdev2.h"
 #include "../../drivers/cc112x/include/gnrc_netdev2_cc112x.h"
 
-#define ENABLE_DEBUG       1
-#define LOG_LEVEL LOG_INFO
-#include "debug.h"
-//#include "debug_t.h"
+#define LOG_LEVEL LOG_ERROR
 #include "log.h"
+#include "debug_t.h"
 
-#define SENDER  1
+#define SENDER  0
 #define SRC_ADDR    11
 #define DATA_BYTES_COUNT    120
 
 #define CC112X_MAC_PRIO          (THREAD_PRIORITY_MAIN - 3)
-#define CC112X_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE + 1024)
+#define CC112X_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT + THREAD_EXTRA_STACKSIZE_PRINTF)
 static netdev2_cc112x_t cc112x_dev;
 static gnrc_netdev2_t gnrc_netdev2_dev;
 static char _stack[CC112X_MAC_STACKSIZE];
@@ -55,15 +53,12 @@ static char _stack[CC112X_MAC_STACKSIZE];
 int main(void)
 {
     genrand_init(1234567);
-//    debug_timeref_init();
+    debug_timeref_init();
 
-    DEBUG("CC112x device driver test\n");
-    LOG(LOG_INFO, "info\n");
-    LOG(LOG_WARNING, "warning\n");
-    LOG(LOG_ALL, "all\n");
-    LOG(LOG_DEBUG, "debug\n");
-    LOG(LOG_ERROR, "error\n");
-    LOG(LOG_NONE, "none\n");
+    LOG_INFO("info\n");
+    LOG_WARNING("warning\n");
+    LOG_DEBUG("debug\n");
+    LOG_ERROR("error\n");
     msg_t msg;
 
     msg_t msg2;
@@ -140,7 +135,7 @@ int main(void)
                 data[a] = genrand_uint32() & 0xff;
             }
 
-            DEBUG("Sending packet, length - %d, nbr - %d\n", count, cnt);
+//            DEBUG("Sending packet, length - %d, nbr - %d\n", count, cnt);
 
             /* Preparing packet */
             pkt = gnrc_pktbuf_add(NULL, data, count, GNRC_NETTYPE_UNDEF);

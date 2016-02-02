@@ -24,7 +24,9 @@
 #include <string.h>
 
 #include "cc112x.h"
+#include "cc112x-internal.h"
 #include "periph/gpio.h"
+#include "xtimer.h"
 #include "irq.h"
 
 #include "kernel_types.h"
@@ -33,210 +35,18 @@
 #include "cpu_conf.h"
 #include "cpu.h"
 
-#include "log.h"
 #include "../cc112x/include/cc112x-defines.h"
 #include "../cc112x/include/cc112x-interface.h"
 #include "../cc112x/include/cc112x-internal.h"
 #include "../cc112x/include/cc112x-netdev2.h"
 #include "../cc112x/include/cc112x-spi.h"
 
-#define ENABLE_DEBUG (1)
-#include "debug.h"
-
-//static void _rx_start(cc112x_t *dev)
-//{
-//    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//    dev->radio_state = RADIO_RX_BUSY;
-//
-//    cc112x_pkt_buf_t *pkt_buf = &dev->pkt_buf;
-//    pkt_buf->pos = 0;
-//
-//    gpio_irq_disable(dev->params.gpio2);
-//
-//    /* Asserted when the RX FIFO is filled above
-//     * FIFO_CFG.FIFO_THR or the end of packet is reached. De-asserted
-//     * when the RX FIFO is empty
-//     */
-//    /*Associated to the RX FIFO. Asserted when the RX FIFO is filled above
-//    FIFO_CFG.FIFO_THR. De-asserted when the RX FIFO is drained below
-//    (or is equal) to the same threshold. This signal is also available in the
-//    MODEM_STATUS1 register*/
-//    cc112x_write_reg(dev, CC112X_IOCFG2, 0x01);
-//    gpio_irq_enable(dev->params.gpio2);
-//
-//}
-//
-//static void _rx_read_data(netdev2_cc112x_t *cc112x_netdev)//, void (*callback)(void*), void*arg)
-//{
-////    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//    cc112x_t *cc112x = &cc112x_netdev->cc112x;
-//    int fifo = cc112x_read_reg(cc112x, CC112X_NUM_RXBYTES);
-//    uint8_t ovf = cc112x_read_reg(cc112x, CC112X_MODEM_STATUS1) & 0x04; /* overflow status bit */
-//
-//    if(ovf) {
-//        DEBUG("%s:%s:%u Overflowed\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        cc112x_switch_to_rx(cc112x);
-//        return;
-//    }
-//
-//    if(!fifo) {
-//        DEBUG("%s:%s:%u FIFO empty \n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        gpio_irq_enable(cc112x->params.gpio2);
-//        return;
-//    }
-//
-//    cc112x_pkt_buf_t *pkt_buf = &cc112x->pkt_buf;
-//    if(!pkt_buf->pos) {
-//        /* rewrite the packet length */
-//        pkt_buf->pos = 1;
-//        pkt_buf->packet.length = cc112x_read_reg(cc112x, CC112X_SINGLE_RXFIFO);
-//
-//        DEBUG("%s:%s:%u Started receiving, pkt. length %d \n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_buf->packet.length);
-//        /* Possible packet received, RX -> IDLE (0.1 us) */
-//        cc112x->cc112x_statistic.packets_in++;
-//    }
-//
-//    int left = pkt_buf->packet.length + 1 - pkt_buf->pos;
-//
-//    /* if the fifo doesn't contain the rest of the packet,
-//     * leav at least one byte as per spec sheet. */
-//    int to_read = (fifo < left) ? (fifo - 1) : fifo;
-//    if(to_read > left) {
-//        to_read = left;
-//    }
-//
-//    if(to_read) {
-////        DEBUG("%s:%s:%u Reading data - %d\n", RIOT_FILE_RELATIVE, __func__, __LINE__, to_read);
-//        cc112x_readburst_reg(cc112x, CC112X_BURST_RXFIFO, ((char *)&pkt_buf->packet) + pkt_buf->pos, to_read);
-//        pkt_buf->pos += to_read;
-//    }
-//
-//    if(to_read == left) {
-//        /* full packet received. */
-//
-//        /* Store RSSI value of packet */
-//        pkt_buf->rssi = cc112x_read_reg(cc112x, CC112X_RSSI1);
-//
-//        /* Bit 0-6 of LQI indicates the link quality (LQI) */
-//        pkt_buf->lqi = cc112x_read_reg(cc112x, CC112X_LQI_VAL);
-//
-//        /* MSB of LQI is the CRC_OK bit */
-//        int crc_ok = (pkt_buf->lqi & CRC_OK) >> 7;
-//
-//        if(crc_ok) {
-//            DEBUG("cc112x: received packet from=%u to=%u payload "
-//                    "len=%u\n",
-//                    (unsigned)pkt_buf->packet.phy_src,
-//                    (unsigned)pkt_buf->packet.address,
-//                    pkt_buf->packet.length-3);
-//            /* let someone know that we've got a packet */
-//            cc112x_netdev->netdev.event_callback(&cc112x_netdev->netdev, NETDEV2_EVENT_RX_COMPLETE, NULL);
-//
-//            cc112x_switch_to_rx(cc112x);
-//        } else {
-//            DEBUG("%s:%s:%u crc-error\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//            cc112x->cc112x_statistic.packets_in_crc_fail++;
-//            cc112x_switch_to_rx(cc112x);
-//        }
-//    }
-//}
-//
-//static void _rx_continue(netdev2_cc112x_t *cc112x_netdev)//, void (*callback)(void*), void*arg)
-//{
-//    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//    cc112x_t *cc112x = &cc112x_netdev->cc112x;
-//    if(cc112x->radio_state != RADIO_RX_BUSY) {
-//        DEBUG("%s:%s:%u _rx_continue in invalid state\n", RIOT_FILE_RELATIVE,
-//                __func__, __LINE__);
-//        cc112x_switch_to_rx(cc112x);
-//        return;
-//    }
-//
-//    do {
-//        _rx_read_data(cc112x_netdev);//, callback, arg);
-//    } while(gpio_read(cc112x->params.gpio2));
-//}
-//
-//static void _tx_abort(cc112x_t *dev)
-//{
-//    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//    cc112x_switch_to_rx(dev);
-//}
-//
-//static void _tx_continue(cc112x_t *dev)
-//{
-//    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//    gpio_irq_disable(dev->params.gpio2);
-//
-//    cc112x_pkt_t *pkt = &dev->pkt_buf.packet;
-//    int size = pkt->length + 1;
-//    int left = size - dev->pkt_buf.pos;
-//
-//    /* If no more data to send, switch to rx mode */
-//    if(!left) {
-//        dev->cc112x_statistic.raw_packets_out++;
-//
-//        DEBUG("%s:%s:%u packet successfully sent\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        puts("\n\n### packet sent\n\n");
-//
-//        cc112x_switch_to_rx(dev);
-//        return;
-//    }
-//
-//    /* Check tx fifo status */
-//    int fifo = cc112x_read_reg(dev, CC112X_MODEM_STATUS0);
-//
-//    if(fifo & 0x01) {
-//        DEBUG("%s:%s:%u txfifo underflow!\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        _tx_abort(dev);
-//        return;
-//    }
-//
-//    if(fifo & 0x08) {
-//        DEBUG("%s:%s:%u txfifo full!?\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        _tx_abort(dev);
-//        return;
-//    }
-//
-//    if(fifo & 0x02) {
-//        DEBUG("%s:%s:%u txfifo overflowed!?\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        _tx_abort(dev);
-//        return;
-//    }
-//
-//    fifo = 100; /* Maximum length of data to be sent */
-//    int to_send = left > fifo ? fifo : left;
-//
-//    /* Write packet into TX FIFO */
-//    cc112x_writeburst_reg(dev, CC112X_BURST_TXFIFO, ((char *)pkt) + dev->pkt_buf.pos, to_send);
-//    dev->pkt_buf.pos += to_send;
-//
-//    if(left == size) {
-//        /* Packet was successfully written into FIFO butter, switch to TX mode */
-//        DEBUG("%s:%s:%u strobing TX\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        cc112x_write_reg(dev, CC112X_IOCFG2, 0x02);
-//        cc112x_strobe(dev, CC112X_STX);
-//        gpio_irq_enable(dev->params.gpio2);
-//    }
-//
-//    if(to_send < left) {
-//        /* No all has been sent */
-//        /* set GPIO2 to 0x2 -> will deassert at TX FIFO below threshold */
-//        DEBUG("%s:%s:%u irq when MCU can write more data\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        cc112x_write_reg(dev, CC112X_IOCFG2, 0x02);
-//        gpio_irq_enable(dev->params.gpio2);
-//    } else {
-//        /* All has been sent */
-//        /* set GPIO2 to 0x6 -> will deassert at packet end */
-//        DEBUG("%s:%s:%u irq will deassert at packet end\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
-//        cc112x_write_reg(dev, CC112X_IOCFG2, 0x06);
-//        gpio_irq_enable(dev->params.gpio2);
-//    }
-//}
+#define LOG_LEVEL LOG_ERROR
+#include "log.h"
 
 int _tx_frame(cc112x_t *dev)
 {
-    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     gpio_irq_disable(dev->params.gpio2);
 
     cc112x_pkt_t *pkt = &dev->pkt_buf.packet;
@@ -246,21 +56,22 @@ int _tx_frame(cc112x_t *dev)
     cc112x_writeburst_reg(dev, CC112X_BURST_TXFIFO, ((char *)pkt), pkt_length);
     /* Read FIFO buffer to check whether data was correctly saved */
     if(cc112x_read_reg(dev, CC112X_NUM_TXBYTES) == pkt_length) {
-        DEBUG("%s:%s:%u Correnctly written %d bytes.\n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_length);
+        LOG_INFO("%s:%s:%u Correnctly written %d bytes.\n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_length);
     } else {
-        DEBUG("%s:%s:%u Flush FIFO and try again...\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        LOG_WARNING("%s:%s:%u Error while writing FIFO, try again...\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         /* Emptying FIFO */
         cc112x_strobe(dev, CC112X_SFTX);
         cc112x_writeburst_reg(dev, CC112X_BURST_TXFIFO, ((char *)pkt), pkt_length);
         if(cc112x_read_reg(dev, CC112X_NUM_TXBYTES) == pkt_length) {
-            DEBUG("%s:%s:%u Correnctly written %d bytes.\n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_length);
+            LOG_INFO("%s:%s:%u Correnctly written %d bytes.\n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_length);
         } else {
-            return -1;
+            LOG_ERROR("%s:%s:%u Error while writing %d bytes to FIFO.\n", RIOT_FILE_RELATIVE, __func__, __LINE__, pkt_length);
             dev->radio_channel = RADIO_IDLE;
+            return -1;
         }
     }
 
-    DEBUG("%s:%s:%u strobing TX\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+    LOG_DEBUG("%s:%s:%u strobing TX\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     dev->radio_state = RADIO_TX_BUSY;
     cc112x_strobe(dev, CC112X_STX);
     gpio_irq_enable(dev->params.gpio2);
@@ -270,13 +81,13 @@ int _tx_frame(cc112x_t *dev)
 
 int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
 {
-    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
 
     cc112x_t *cc112x = (cc112x_t*)&cc112x_netdev->cc112x;
     cc112x_pkt_t *pkt = &cc112x->pkt_buf.packet;
 
     if(cc112x->radio_state != RADIO_RX_BUSY) {
-        DEBUG("%s:%s:%u _rx_continue in invalid state\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        LOG_ERROR("%s:%s:%u _rx_frame in invalid state\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         return -1;
     }
 
@@ -284,7 +95,7 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
     int length = cc112x_read_reg(cc112x, CC112X_NUM_RXBYTES);
     int status = cc112x_read_reg(cc112x, CC112X_MARC_STATUS1);
     if(status & 0x09){
-        DEBUG("%s:%s:%u FIFO overflow\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        LOG_WARNING("%s:%s:%u FIFO overflow\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         return -1;
     }
     /* Store RSSI value of packet */
@@ -296,14 +107,14 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
         cc112x->pkt_buf.lqi &= 0x7f;
         /* Packet reading */
         cc112x_readburst_reg(cc112x, CC112X_BURST_RXFIFO, (char *)pkt, length);
-        DEBUG("cc112x: received packet from=%u to=%u payload len=%u\n",
+        LOG_INFO("cc112x: received packet from=%u to=%u payload len=%u\n",
                 (unsigned )cc112x->pkt_buf.packet.phy_src,
                 (unsigned )cc112x->pkt_buf.packet.address,
                 cc112x->pkt_buf.packet.length - 3);
         /* let someone know that we've got a packet */
         cc112x_netdev->netdev.event_callback(&cc112x_netdev->netdev, NETDEV2_EVENT_RX_COMPLETE, NULL);
     } else {
-        DEBUG("%s:%s:%u crc-error\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        LOG_INFO("%s:%s:%u crc-error\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         return 0;
     }
     return length;
@@ -313,56 +124,55 @@ void cc112x_isr_handler(void* arg)
 {
     netdev2_cc112x_t *cc112x_netdev = (netdev2_cc112x_t*)arg;
     cc112x_t *cc112x = &cc112x_netdev->cc112x;
-//
-//    printf("RADIO STATE - %x\n", cc112x->radio_state);
-//    printf("MODEM_STATUS_0 - %x\n", cc112x_read_reg(cc112x, CC112X_MODEM_STATUS0));
-//    printf("MODEM_STATUS_1 - %x\n", cc112x_read_reg(cc112x, CC112X_MODEM_STATUS1));
-//    printf("MARC_STATUS_1 - %x\n", cc112x_read_reg(cc112x, CC112X_MARC_STATUS1));
 
-    DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     switch(cc112x->radio_state) {
     case RADIO_RX:
         if(gpio_read(cc112x->params.gpio2)) {
-            DEBUG("cc112x_isr_handler((): frame appeared\n");
+            LOG_INFO("cc112x_isr_handler((): frame appeared\n");
             cc112x->radio_state = RADIO_RX_BUSY;
         } else {
-            DEBUG("cc112x_isr_handler((): isr handled too slow?\n");
+            LOG_WARNING("cc112x_isr_handler((): isr handled too slow?\n");
             cc112x_switch_to_rx(cc112x);
         }
         break;
     case RADIO_RX_BUSY:
         if(!gpio_read(cc112x->params.gpio2)) {
-            DEBUG("cc112x_isr_handler((): whole received frame in buffer\n");
+            LOG_INFO("cc112x_isr_handler((): whole received frame in buffer\n");
             _rx_frame(cc112x_netdev);
             cc112x_switch_to_rx(cc112x);
         } else {
-            DEBUG("cc112x_isr_handler((): interrupt lost?\n");
+            LOG_WARNING("cc112x_isr_handler((): interrupt lost?\n");
         }
         break;
     case RADIO_TX_BUSY:
         if(!gpio_read(cc112x->params.gpio2)) {
-            DEBUG("cc112x_isr_handler((): frame sent going to receive state\n");
+            LOG_INFO("cc112x_isr_handler((): frame sent, going to receive state\n");
             cc112x_switch_to_rx(cc112x);
         }
         break;
     default:
-        DEBUG("%s:%s:%u: unhandled mode\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        LOG_WARNING("%s:%s:%u: unhandled mode\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     }
 }
 
 int cc112x_send(cc112x_t *dev, cc112x_pkt_t *packet)
 {
-    DEBUG("cc112x: snd pkt to %u payload_length=%u\n",
+    LOG_DEBUG("cc112x: snd pkt to %u payload_length=%u\n",
             (unsigned )packet->address, (unsigned )packet->length + 1);
     uint8_t size;
+    int cnt = 0;
 
-    switch(dev->radio_state) {
-    case RADIO_RX_BUSY:
-        case RADIO_TX_BUSY:
-        puts("invalid state for sending");
-        DEBUG("cc112x: invalid state for sending: %x\n",
-                (dev->radio_state));
-        return -EAGAIN;
+    if(!(RADIO_IDLE == dev->radio_state || RADIO_RX == dev->radio_state)){
+        LOG_WARNING("%s:%s:%u: Invalid state for sending: %x\n", RIOT_FILE_RELATIVE, __func__, __LINE__, (dev->radio_state));
+        while(RADIO_IDLE != dev->radio_state){
+            xtimer_usleep(1000);
+            ++cnt;
+            if(100 == cnt){
+                LOG_ERROR("%s:%s:%u: Too long in a inapropriate state: %x\n", RIOT_FILE_RELATIVE, __func__, __LINE__, (dev->radio_state));
+                return -EAGAIN;
+            }
+        }
     }
 
     /*
@@ -373,7 +183,7 @@ int cc112x_send(cc112x_t *dev, cc112x_pkt_t *packet)
     size = packet->length + 1;
 
     if(size > CC112X_PACKET_LENGTH) {
-        DEBUG("%s:%s:%u trying to send oversized packet\n",
+        LOG_WARNING("%s:%s:%u trying to send oversized packet\n",
                 RIOT_FILE_RELATIVE, __func__, __LINE__);
         return -ENOSPC;
     }

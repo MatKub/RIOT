@@ -17,11 +17,12 @@
 #include "net/gnrc/netdev2.h"
 #include "od.h"
 
-#define ENABLE_DEBUG    (0)
-#include "debug.h"
+#define LOG_LEVEL LOG_ERROR
+#include "log.h"
 
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 {
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     cc112x_pkt_t cc112x_pkt;
     netdev2_t *dev = gnrc_netdev2->dev;
     netdev2_cc112x_t *netdev_cc112x = (netdev2_cc112x_t *) dev;
@@ -33,10 +34,18 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
     gnrc_netif_hdr_t *netif_hdr;
     gnrc_pktsnip_t *payload;
 
+    if(!(cc112x->radio_state == RADIO_RX_BUSY ||
+            cc112x->radio_state == RADIO_IDLE ||
+            cc112x->radio_state == RADIO_RX ||
+            cc112x->radio_state == RADIO_PWD)){
+        LOG_INFO("%s:%s:%u: Radio is busy\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+        return -EBUSY;
+    }
+
     payload = pkt->next;
 
     if (pkt->type != GNRC_NETTYPE_NETIF) {
-        DEBUG("gnrc_netdev2_cc112x: First header was not generic netif header\n");
+        LOG_WARNING("gnrc_netdev2_cc112x: First header was not generic netif header\n");
         gnrc_pktbuf_release(pkt);
         return -EBADMSG;
     }
@@ -95,7 +104,7 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 //        DEBUG("Type - %d ; size - %d\n", next->type, next->size);
 
         if (payload_len > CC112X_MAX_DATA_LENGTH) {
-            DEBUG("gnrc_netdev2_cc112x: payload length exceeds maximum"
+            LOG_WARNING("gnrc_netdev2_cc112x: payload length exceeds maximum"
                     "(%u>%u)\n", payload_len, CC112X_MAX_DATA_LENGTH);
             gnrc_pktbuf_release(pkt);
             return -EBADMSG;
@@ -118,7 +127,7 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 //    }
 //    DEBUG("\n");
 
-    DEBUG("gnrc_netdev2_cc112x: sending packet from %u to %u with payload "
+    LOG_INFO("gnrc_netdev2_cc112x: sending packet from %u to %u with payload "
             "length %u\n",
             (unsigned)cc112x_pkt.phy_src,
             (unsigned)cc112x_pkt.address,
@@ -129,6 +138,7 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 
 static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 {
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     netdev2_t *dev = gnrc_netdev2->dev;
     cc112x_t *cc112x = &((netdev2_cc112x_t*) dev)->cc112x;
 
@@ -163,7 +173,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
             payload_length, nettype);
 
     if(!pkt) {
-        DEBUG("cc112x: _recv: cannot allocate pktsnip.\n");
+        LOG_ERROR("cc112x: _recv: cannot allocate pktsnip.\n");
         return NULL;
     }
 
@@ -173,7 +183,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
             GNRC_NETTYPE_NETIF);
 
     if (netif_hdr == NULL) {
-        DEBUG("gnrc_netdev2_cc112x: no space left in packet buffer\n");
+        LOG_WARNING("gnrc_netdev2_cc112x: no space left in packet buffer\n");
         gnrc_pktbuf_release(pkt);
         return NULL;
     }
@@ -194,8 +204,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
     ((gnrc_netif_hdr_t *)netif_hdr->data)->lqi = cc112x->pkt_buf.lqi;
     ((gnrc_netif_hdr_t *)netif_hdr->data)->rssi = cc112x->pkt_buf.rssi;
 
-    DEBUG("gnrc_netdev2_cc112x: received packet from %02x"
-            " of length %u\n",
+    LOG_INFO("gnrc_netdev2_cc112x: received packet from %02x of length %u\n",
             (unsigned)cc112x_pkt->phy_src,
             (unsigned)cc112x_pkt->length-CC112X_HEADER_LENGTH);
 #if defined(MODULE_OD) && ENABLE_DEBUG
@@ -209,6 +218,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 
 int gnrc_netdev2_cc112x_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_t *dev)
 {
+    LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     gnrc_netdev2->send = _send;
     gnrc_netdev2->recv = _recv;
     gnrc_netdev2->dev = dev;

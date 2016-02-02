@@ -55,7 +55,7 @@ struct cc112x {
     cc112x_statistic_t cc112x_statistic;        /**< Statistic values for
                                                      debugging */
 
-    uint8_t radio_state;                        /**< Radio state */
+    volatile uint8_t radio_state;                        /**< Radio state */
     uint8_t radio_channel;                      /**< current Radio channel */
     uint8_t radio_address;                      /**< current Radio address */
 
