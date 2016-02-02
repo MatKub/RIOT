@@ -32,11 +32,11 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "debug_t.h"
+
 #ifdef __cplusplus
  extern "C" {
 #endif
-
-#include "debug_t.h"
 
 /**
  * @brief defined log levels
@@ -75,7 +75,7 @@ enum {
 /**
  * @brief Log message if level <= LOG_LEVEL
  */
-#define LOG(level, ...) if (level <= LOG_LEVEL) log_write(level, __VA_ARGS__)
+#define LOG(level, ...) if (level <= LOG_LEVEL) {log_write(level, __VA_ARGS__);}
 
 /**
  * @brief logging convenience defines
@@ -91,22 +91,17 @@ enum {
 #include "log_module.h"
 #else
 #include <stdio.h>
+
 /**
  * @brief Default log_write function, just maps to printf
  */
-#ifdef MODULE_DEBUG_T
+#define log_write(level, ...) {\
+        debug_timestamp(); \
+        printf("%s", time_stamp); \
+        printf(__VA_ARGS__); \
+ }
 
-#define log_write(level, ...) \
-    debug_timestamp(); \
-    printf("%s", time_stamp); \
-    printf(__VA_ARGS__)
-#else
-
-#define log_write(level, ...) printf(__VA_ARGS__)
-
-#endif //MODULE_DEBUG_T
-
-#endif //
+#endif
 
 #ifdef __cplusplus
 }
