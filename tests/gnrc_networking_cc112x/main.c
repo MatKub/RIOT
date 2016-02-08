@@ -28,8 +28,6 @@
 #include "debug.h"
 
 #include "periph/gpio.h"
-#include "t_debug.h"
-
 #include "net/gnrc/netapi.h"
 #include "net/gnrc/pkt.h"
 
