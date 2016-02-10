@@ -27,8 +27,10 @@
 #include "cc110x.h"
 #include "cc110x_params.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
+
+int RADIO_proc;
 
 /**
  * @brief   Define stack parameters for the MAC layer thread
@@ -55,9 +57,8 @@ void auto_init_cc110x(void)
         }
         else {
             gnrc_netdev2_cc110x_init(&_gnrc_netdev2_devs[i], &cc110x_devs[i]);
-            res = gnrc_netdev2_init(_stacks[i], CC110X_MAC_STACKSIZE,
-                    CC110X_MAC_PRIO, "cc110x", &_gnrc_netdev2_devs[i]);
-            if (res < 0) {
+            RADIO_proc = gnrc_netdev2_init(_stacks[i], CC110X_MAC_STACKSIZE, CC110X_MAC_PRIO, "cc110x", &_gnrc_netdev2_devs[i]);
+            if (RADIO_proc < 0) {
                 DEBUG("Error starting gnrc_cc110x thread for CC110X!");
             }
         }

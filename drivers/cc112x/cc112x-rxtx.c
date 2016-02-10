@@ -41,7 +41,7 @@
 #include "../cc112x/include/cc112x-netdev2.h"
 #include "../cc112x/include/cc112x-spi.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_WARNING
 #include "log.h"
 
 int _tx_frame(cc112x_t *dev)
@@ -94,8 +94,8 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
     /* Getting information about packet */
     int length = cc112x_read_reg(cc112x, CC112X_NUM_RXBYTES);
     int status = cc112x_read_reg(cc112x, CC112X_MARC_STATUS1);
-    if(status & 0x09){
-        LOG_WARNING("%s:%s:%u FIFO overflow\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
+    if(status != 0x80){
+        LOG_INFO("%s:%s:%u FIFO overflow, or CRC-ERROR or ADDR fault\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         return -1;
     }
     /* Store RSSI value of packet */
@@ -117,6 +117,7 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
         LOG_INFO("%s:%s:%u crc-error\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
         return 0;
     }
+
     return length;
 }
 
@@ -165,11 +166,11 @@ int cc112x_send(cc112x_t *dev, cc112x_pkt_t *packet)
 
     if(!(RADIO_IDLE == dev->radio_state || RADIO_RX == dev->radio_state)){
         LOG_WARNING("%s:%s:%u: Invalid state for sending: %x\n", RIOT_FILE_RELATIVE, __func__, __LINE__, (dev->radio_state));
-        while(RADIO_IDLE != dev->radio_state){
-            xtimer_usleep(1000);
+        while(!(RADIO_IDLE == dev->radio_state || RADIO_RX == dev->radio_state)){
+            xtimer_usleep(10000);
             ++cnt;
             if(100 == cnt){
-                LOG_ERROR("%s:%s:%u: Too long in a inapropriate state: %x\n", RIOT_FILE_RELATIVE, __func__, __LINE__, (dev->radio_state));
+                LOG_ERROR("%s:%s:%u: Too long or in a inapropriate state: %x\n", RIOT_FILE_RELATIVE, __func__, __LINE__, (dev->radio_state));
                 return -EAGAIN;
             }
         }

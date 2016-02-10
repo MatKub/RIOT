@@ -28,7 +28,7 @@
 #include "cc112x_params.h"
 #include "./../../drivers/cc112x/include/cc112x-netdev2.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
 
 /**
@@ -39,6 +39,8 @@
 #define CC112X_MAC_PRIO          (THREAD_PRIORITY_MAIN - 3)
 
 #define CC112X_NUM (sizeof(cc112x_params)/sizeof(cc112x_params[0]))
+
+int RADIO_proc;
 
 static netdev2_cc112x_t cc112x_devs[CC112X_NUM];
 static char _stacks[CC112X_MAC_STACKSIZE][CC112X_NUM];
@@ -56,9 +58,9 @@ void auto_init_cc112x(void)
         }
         else {
             gnrc_netdev2_cc112x_init(&_gnrc_netdev2_devs[i], &(cc112x_devs[i].netdev));
-            res = gnrc_netdev2_init(_stacks[i], CC112X_MAC_STACKSIZE,
+            RADIO_proc = gnrc_netdev2_init(_stacks[i], CC112X_MAC_STACKSIZE,
                     CC112X_MAC_PRIO, "cc112x", &_gnrc_netdev2_devs[i]);
-            if (res < 0) {
+            if (RADIO_proc < 0) {
                 DEBUG("Error starting gnrc_cc112x thread for CC112X!");
             }
         }

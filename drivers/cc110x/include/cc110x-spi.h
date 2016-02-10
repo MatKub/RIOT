@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#define GPIO_READS_SPI_PINS 1
+
 /**
  * @brief Write a set of bytes using burst mode (if available)
  *

@@ -17,7 +17,7 @@
 #include "net/gnrc/netdev2.h"
 #include "od.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_WARNING
 #include "log.h"
 
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
@@ -169,8 +169,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
     }
 
     /* copy packet payload into pktbuf */
-    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, cc112x_pkt->data,
-            payload_length, nettype);
+    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, cc112x_pkt->data, payload_length, nettype);
 
     if(!pkt) {
         LOG_ERROR("cc112x: _recv: cannot allocate pktsnip.\n");

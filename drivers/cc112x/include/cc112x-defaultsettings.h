@@ -60,6 +60,7 @@ extern "C" {
             {CC112X_IOCFG3, 0x30},
             {CC112X_IOCFG2, 0x06},
             {CC112X_IOCFG0, 0x30},
+            {CC112X_RFEND_CFG0, 0x08},
             {CC112X_SYNC_CFG1, 0x8},
             {CC112X_DEVIATION_M, 0x99},
             {CC112X_MODCFG_DEV_E, 0x0D},
@@ -80,7 +81,7 @@ extern "C" {
             {CC112X_FS_CFG, 0x12},
             {CC112X_PKT_CFG2, 0x10},
             /* If address check, shoult be 0x65 */
-            {CC112X_PKT_CFG1, 0x45},
+            {CC112X_PKT_CFG1, 0x65},
             {CC112X_PKT_CFG0, 0x20},
             {CC112X_PA_CFG0, 0x7B},
             {CC112X_PKT_LEN, 0xFF},
