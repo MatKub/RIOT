@@ -1,7 +1,7 @@
 # name of your application
-APPLICATION = driver_cc112x
+APPLICATION = radio_test
 
-USEMODULE_INCLUDES += $(RIOTBASE)/drivers/cc112x/include
+#USEMODULE_INCLUDES += $(RIOTBASE)/drivers/cc112x/include
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
@@ -15,6 +15,17 @@ BOARD_INSUFFICIENT_MEMORY := airfy-beacon chronos msb-430 msb-430h nrf51dongle \
                           yunjia-nrf51822 z1
 
 # Add also the shell, some shell commands
+USEMODULE += gnrc
+USEMODULE += gnrc_netif_default
+USEMODULE += auto_init_gnrc_netif
+
+DISABLE_MODULE += ieee802154
+
+ifneq (,$(filter gnrc_netif_default,$(USEMODULE)))
+    USEMODULE += cc110x gnrc_netdev2 gnrc_cc110x
+endif
+
+USEMODULE += debug_t
 USEMODULE += xtimer
 USEMODULE += shell
 USEMODULE += shell_commands
@@ -22,17 +33,10 @@ USEMODULE += ps
 
 USEMODULE += random
 
-USEMODULE += cc112x
-DISABLE_MODULE += ieee802154
-USEMODULE += gnrc_netdev2
-USEMODULE += gnrc_cc112x
-
-USEMODULE += debug_t
-
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
-CFLAGS += -DDEVELHELP
+#CFLAGS += -DDEVELHELP
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
