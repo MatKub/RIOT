@@ -49,7 +49,7 @@ int _tx_frame(cc112x_t *dev)
     LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
     gpio_irq_disable(dev->params.gpio2);
 
-    cc112x_pkt_t *pkt = &dev->pkt_buf.packet;
+    cc112x_pkt_t *pkt = &dev->tx_pkt_buf.packet;
     int pkt_length = pkt->length+1;
 
     /* Write packet into TX FIFO */
@@ -84,7 +84,7 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
     LOG_DEBUG("%s:%s:%u\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
 
     cc112x_t *cc112x = (cc112x_t*)&cc112x_netdev->cc112x;
-    cc112x_pkt_t *pkt = &cc112x->pkt_buf.packet;
+    cc112x_pkt_t *pkt = &cc112x->rx_pkt_buf.packet;
 
     if(cc112x->radio_state != RADIO_RX_BUSY) {
         LOG_ERROR("%s:%s:%u _rx_frame in invalid state\n", RIOT_FILE_RELATIVE, __func__, __LINE__);
@@ -99,18 +99,18 @@ int _rx_frame(netdev2_cc112x_t *cc112x_netdev)
         return -1;
     }
     /* Store RSSI value of packet */
-    cc112x->pkt_buf.rssi = cc112x_read_reg(cc112x, CC112X_RSSI1);
+    cc112x->rx_pkt_buf.rssi = cc112x_read_reg(cc112x, CC112X_RSSI1);
     /* Bit 0-6 of LQI indicates the link quality (LQI) */
-    cc112x->pkt_buf.lqi = cc112x_read_reg(cc112x, CC112X_LQI_VAL);
+    cc112x->rx_pkt_buf.lqi = cc112x_read_reg(cc112x, CC112X_LQI_VAL);
     /* MSB of LQI is the CRC_OK bit */
-    if(cc112x->pkt_buf.lqi & CRC_OK) {
-        cc112x->pkt_buf.lqi &= 0x7f;
+    if(cc112x->rx_pkt_buf.lqi & CRC_OK) {
+        cc112x->rx_pkt_buf.lqi &= 0x7f;
         /* Packet reading */
         cc112x_readburst_reg(cc112x, CC112X_BURST_RXFIFO, (char *)pkt, length);
         LOG_INFO("cc112x: received packet from=%u to=%u payload len=%u\n",
-                (unsigned )cc112x->pkt_buf.packet.phy_src,
-                (unsigned )cc112x->pkt_buf.packet.address,
-                cc112x->pkt_buf.packet.length - 3);
+                (unsigned )cc112x->rx_pkt_buf.packet.phy_src,
+                (unsigned )cc112x->rx_pkt_buf.packet.address,
+                cc112x->rx_pkt_buf.packet.length - 3);
         /* let someone know that we've got a packet */
         cc112x_netdev->netdev.event_callback(&cc112x_netdev->netdev, NETDEV2_EVENT_RX_COMPLETE, NULL);
     } else {
@@ -201,7 +201,7 @@ int cc112x_send(cc112x_t *dev, cc112x_pkt_t *packet)
     /* Flush TX FIFO to be sure it is empty */
     cc112x_strobe(dev, CC112X_SFTX);
 
-    memcpy((char*)&dev->pkt_buf.packet, packet, size);
+    memcpy((char*)&dev->tx_pkt_buf.packet, packet, size);
 
     _tx_frame(dev);
 

@@ -38,14 +38,16 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
-#define SENDER  1
-#define SRC_ADDR    22
-#define DATA_BYTES_COUNT    120
+/* Node params */
+#define SENDER  1   // 1-sender; 0-receiver
+#define SRC_ADDR    5  // source address
+#define MAX_DATA_BYTES_COUNT    120
 
+/* stack for rawdump thread */
 static char rawdmp_stack[THREAD_STACKSIZE_MAIN];
 
-extern int RADIO_proc;
-int MAIN_proc;
+extern int RADIO_proc;  /* radio process number */
+int MAIN_proc;  /* main process number */
 
 /* Radio parameters */
 uint8_t src_addr = SRC_ADDR;
@@ -55,6 +57,7 @@ uint8_t channel = 25;
 /* MSG */
 #define MSG_DATA_SND 0x4325
 
+/* statistics structure */
 struct {
     int sent;
     int received;
@@ -65,7 +68,7 @@ struct {
 
 typedef struct {
     uint8_t length;
-    char data[DATA_BYTES_COUNT];
+    char data[MAX_DATA_BYTES_COUNT];
     int nbr;
     uint64_t timestamp;
 } TX_packet_t;
@@ -101,7 +104,7 @@ void *rawdump(void *arg)
 {
     msg_t msg;
     gnrc_pktsnip_t *pkt;
-    uint8_t * ap;
+    uint8_t * adr_pointer;
     gnrc_netif_hdr_t * netif_hdr;
 
 #if SENDER == 1
@@ -111,8 +114,7 @@ void *rawdump(void *arg)
 #else
     uint32_t cnt = 0;
     gnrc_pktsnip_t *nif;
-    uint8_t dst_addr = 0;
-
+    uint8_t from = 0;
 #endif
 
     while(1) {
@@ -125,13 +127,13 @@ void *rawdump(void *arg)
 #if SENDER == 1
             /* If in sender mode, here the packet will be processed and checked */
             if(pkt->next->type != GNRC_NETTYPE_NETIF) {
-                printf("Possibly foreign message...\n");
+                printf("No netif header, possibly foreign message...\n");
             } else {
                 netif_hdr = (gnrc_netif_hdr_t *)pkt->next->data;
                 /* set up header */
                 if(netif_hdr->dst_l2addr_len == 1) {
-                    ap = gnrc_netif_hdr_get_dst_addr(netif_hdr);
-                    if(SRC_ADDR == (*ap)) {
+                    adr_pointer = gnrc_netif_hdr_get_dst_addr(netif_hdr);
+                    if(SRC_ADDR == (*adr_pointer)) {
                         /* Calculating time */
                         if(sent_packet != NULL)
                         {
@@ -145,7 +147,7 @@ void *rawdump(void *arg)
                                 for(int i = 0;; ++i) {
                                     if(i == pkt->size) {
                                         DEBUG("Packet received successfully\n");
-                                        printf("Nbr %04d, length %03u, after %lu[ms], speed %d[Bps]\n", sent_packet->nbr, sent_packet->length, (uint32_t)time_diff / 1000, RX_TX_stat.bytes_per_second);
+                                        printf("%lu - nbr %04d, length %03u, after %lu[ms], speed %d[Bps]\n", (uint32_t)(xtimer_now64()/1000), sent_packet->nbr, sent_packet->length, (uint32_t)time_diff / 1000, RX_TX_stat.bytes_per_second);
                                         ++RX_TX_stat.received;
                                         break;
                                     }
@@ -159,38 +161,40 @@ void *rawdump(void *arg)
                             msg_sent = false;
                         }
                     } else {
-                        printf("Possibly foreign message...\n");
+                        printf("Wrong address, foreign message...\n");
                     }
                 }
             }
             gnrc_pktbuf_release(pkt);
 #else
-            /* If receiver mode, printing packet */
-            //pkt_print((gnrc_pktsnip_t *)msg.content.ptr);
-
-            /* And sending packet back */
+            /* If receiver mode, printing packet information */
+            /* In first pktsnip are data, in the second should be netif header */
             if (pkt->next->type != GNRC_NETTYPE_NETIF) {
-                src_addr = 0;
+                /* Undefined address */
+                from = 0;
             } else {
                 netif_hdr = (gnrc_netif_hdr_t *)pkt->next->data;
                 /* set up header */
                 if(netif_hdr->dst_l2addr_len == 1) {
-                    ap = gnrc_netif_hdr_get_src_addr(netif_hdr);
-                    dst_addr = *ap;
+                    adr_pointer = gnrc_netif_hdr_get_src_addr(netif_hdr);
+                    from = (*adr_pointer);
                 } else {
-                    dst_addr = 0;
+                    /* Undefined address */
+                    from = 0;
                 }
+                printf("%lu - nbr %lu, from %d, length %u, RSSI %u, LQI %d\n", (uint32_t)(xtimer_now64()/1000), cnt++, from, pkt->size, netif_hdr->rssi, netif_hdr->lqi);
             }
+            /* And sending packet back */
             gnrc_pktbuf_release(pkt->next);
             pkt->next = NULL;
-            nif = gnrc_netif_hdr_build(&src_addr, 1, &dst_addr, 1);
+            nif = gnrc_netif_hdr_build(&src_addr, 1, &from, 1);
             nif->next = pkt;
 
             msg.sender_pid = thread_getpid();
             msg.type = GNRC_NETAPI_MSG_TYPE_SND;
             msg.content.ptr = (char*)nif;
             msg_send(&msg, RADIO_proc);
-            printf("Retransmitted packet nbr %lu to %d\n", cnt++, dst_addr);
+
             /* Message space will be freed after the packet will be sent */
 #endif
             break;
@@ -223,17 +227,21 @@ void *rawdump(void *arg)
  */
 int main(void)
 {
+    /* initializing random generator */
     genrand_init(1234567);
     debug_timeref_init();
 
     MAIN_proc = thread_getpid();
     msg_t msg;
 
+    /* network api options message */
     gnrc_netapi_opt_t opt;
 
+    /* packet snips to send */
     gnrc_pktsnip_t *pkt;
     gnrc_pktsnip_t *nif;
 
+    /* packet to send */
     TX_packet_t TX_packet;
     TX_packet.nbr = 0;
 
@@ -272,9 +280,11 @@ int main(void)
             /* Generating message */
             ++TX_packet.nbr;
             TX_packet.length = 0;
-            while(TX_packet.length == 0 || TX_packet.length > DATA_BYTES_COUNT) {
+            /* Random packet length (minimum 0, maximum  */
+            while(TX_packet.length == 0 || TX_packet.length > MAX_DATA_BYTES_COUNT) {
                 TX_packet.length = genrand_uint32() & 0xff;
             }
+            /* Generating random data */
             for(uint32_t a = 0; a <= TX_packet.length; ++a) {
                 TX_packet.data[a] = genrand_uint32() & 0xff;
             }
@@ -294,19 +304,22 @@ int main(void)
             msg.type = GNRC_NETAPI_MSG_TYPE_SND;
             msg.content.ptr = (char*)nif;
             msg.sender_pid = thread_getpid();
-            /* Send message */
+            /* Sending message */
             msg_send(&msg, RADIO_proc);
             ++RX_TX_stat.sent;
-
+            /* Sending the data to pkt_dump thread */
             msg.type = MSG_DATA_SND;
             msg.sender_pid = thread_getpid();
             TX_packet.timestamp = xtimer_now64();
             msg.content.ptr = (char*)&TX_packet;
-
             msg_send(&msg, dump.pid);
 
-            xtimer_usleep(10000000/30);
-
+            uint8_t packets_per_10sec;
+            packets_per_10sec = 0;
+            while((packets_per_10sec > 200) || (packets_per_10sec == 0)) {
+              packets_per_10sec = genrand_uint32() & 0xff;
+            }
+            xtimer_usleep(10000000/packets_per_10sec);
         }
     } else {
         while(1) {

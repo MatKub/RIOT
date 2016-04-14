@@ -1,5 +1,0 @@
-h
-erase
-loadbin ./tests/driver_cc112x/bin/rf_ism_mod_2_1/driver_cc112x.bin,0
-r
-q

@@ -17,7 +17,7 @@
 #include "net/gnrc/netdev2.h"
 #include "od.h"
 
-#define LOG_LEVEL LOG_WARNING
+#define LOG_LEVEL LOG_DEBUG
 #include "log.h"
 
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
@@ -142,7 +142,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
     netdev2_t *dev = gnrc_netdev2->dev;
     cc112x_t *cc112x = &((netdev2_cc112x_t*) dev)->cc112x;
 
-    cc112x_pkt_t *cc112x_pkt = &cc112x->pkt_buf.packet;
+    cc112x_pkt_t *cc112x_pkt = &cc112x->rx_pkt_buf.packet;
 
     int payload_length = cc112x_pkt->length - CC112X_HEADER_LENGTH;
 
@@ -177,9 +177,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
     }
 
     gnrc_pktsnip_t *netif_hdr;
-    netif_hdr = gnrc_pktbuf_add(NULL, NULL,
-            sizeof(gnrc_netif_hdr_t) + 2*addr_len,
-            GNRC_NETTYPE_NETIF);
+    netif_hdr = gnrc_pktbuf_add(NULL, NULL, sizeof(gnrc_netif_hdr_t) + 2*addr_len, GNRC_NETTYPE_NETIF);
 
     if (netif_hdr == NULL) {
         LOG_WARNING("gnrc_netdev2_cc112x: no space left in packet buffer\n");
@@ -200,15 +198,15 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
     }
 
     ((gnrc_netif_hdr_t *)netif_hdr->data)->if_pid = thread_getpid();
-    ((gnrc_netif_hdr_t *)netif_hdr->data)->lqi = cc112x->pkt_buf.lqi;
-    ((gnrc_netif_hdr_t *)netif_hdr->data)->rssi = cc112x->pkt_buf.rssi;
+    ((gnrc_netif_hdr_t *)netif_hdr->data)->lqi = cc112x->rx_pkt_buf.lqi;
+    ((gnrc_netif_hdr_t *)netif_hdr->data)->rssi = cc112x->rx_pkt_buf.rssi;
 
     LOG_INFO("gnrc_netdev2_cc112x: received packet from %02x of length %u\n",
             (unsigned)cc112x_pkt->phy_src,
             (unsigned)cc112x_pkt->length-CC112X_HEADER_LENGTH);
-#if defined(MODULE_OD) && ENABLE_DEBUG
+//#if defined(MODULE_OD) && ENABLE_DEBUG
     od_hex_dump(cc112x_pkt->data, payload_length, OD_WIDTH_DEFAULT);
-#endif
+//#endif
 
     pkt->next = netif_hdr;
 

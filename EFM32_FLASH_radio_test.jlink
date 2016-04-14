@@ -1,0 +1,5 @@
+h
+erase
+loadbin ./tests/radio_test/bin/rf_ism_mod_2_1/radio_test.bin,0
+r
+q

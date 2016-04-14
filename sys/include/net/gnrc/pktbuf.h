@@ -55,7 +55,7 @@ extern "C" {
  *          management to allocate packets.
  */
 #ifndef GNRC_PKTBUF_SIZE
-#define GNRC_PKTBUF_SIZE    (6144)
+#define GNRC_PKTBUF_SIZE    (5*1024)
 #endif  /* GNRC_PKTBUF_SIZE */
 
 /**

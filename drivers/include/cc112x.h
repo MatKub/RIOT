@@ -59,7 +59,8 @@ struct cc112x {
     uint8_t radio_channel;                      /**< current Radio channel */
     uint8_t radio_address;                      /**< current Radio address */
 
-    cc112x_pkt_buf_t pkt_buf;                   /**< RX/TX buffer */
+    cc112x_pkt_buf_t rx_pkt_buf;                   /**< RX/TX buffer */
+    cc112x_pkt_buf_t tx_pkt_buf;
 };
 
 /**

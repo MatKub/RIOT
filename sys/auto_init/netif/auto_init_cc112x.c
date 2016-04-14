@@ -35,7 +35,7 @@
  * @brief   Define stack parameters for the MAC layer thread
  * @{
  */
-#define CC112X_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE + 1024)
+#define CC112X_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE)
 #define CC112X_MAC_PRIO          (THREAD_PRIORITY_MAIN - 3)
 
 #define CC112X_NUM (sizeof(cc112x_params)/sizeof(cc112x_params[0]))

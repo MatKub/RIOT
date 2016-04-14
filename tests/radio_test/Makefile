@@ -22,7 +22,7 @@ USEMODULE += auto_init_gnrc_netif
 DISABLE_MODULE += ieee802154
 
 ifneq (,$(filter gnrc_netif_default,$(USEMODULE)))
-    USEMODULE += cc110x gnrc_netdev2 gnrc_cc110x
+    USEMODULE += cc112x gnrc_netdev2 gnrc_cc112x
 endif
 
 USEMODULE += debug_t

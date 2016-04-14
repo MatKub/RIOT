@@ -25,29 +25,14 @@
 
 #include "cpu_conf.h"
 #include "xtimer.h"
-#include "debug.h"
 
-#include "periph/gpio.h"
-#include "net/gnrc/netapi.h"
-#include "net/gnrc/pkt.h"
-
-#include <time.h>
-#include <sys/time.h>
-
-#include "../../cpu/efm32wg/emlib/inc/em_cmu.h"
-#include "../../cpu/efm32wg/emlib/inc/em_gpio.h"
-
-#include <inttypes.h>
-#include <stdarg.h>
 
 #define MAIN_QUEUE_SIZE     (20)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 extern int udp_cmd(int argc, char **argv);
 
-int timer_sleep(__attribute__((unused)) int argc,
-        __attribute__((unused)) char **argv)
-{
+int timer_sleep(__attribute__((unused)) int argc, __attribute__((unused)) char **argv){
     xtimer_sleep(1);
     return 0;
 }
@@ -55,34 +40,20 @@ int timer_sleep(__attribute__((unused)) int argc,
 extern char ajdi[CPUID_ID_LEN];
 
 static const shell_command_t shell_commands[] = {
-//        {"data_test", "transfer test", data_test},
-        {"udp", "send data over UDP and listen on UDP ports", udp_cmd}, {
-                "timer", "sleep loop", timer_sleep}, {NULL, NULL, NULL}};
-
-void (*foo)(int);
-
-void my_int_func(int x)
-{
-    printf("%d\n", x);
-}
+    { "udp", "send data over UDP and listen on UDP ports", udp_cmd },
+    { "timer", "sleep loop", timer_sleep },
+    { NULL, NULL, NULL }
+};
 
 int main(void)
 {
-    debug_timeref_init();
-
-    printf("LFXO - %lu\n", SystemHFClockGet());
-    printf("System core clock - %lu\n", SystemCoreClockGet());
-
-//    void (*foo)(int);
-//    foo = &my_int_func;
-//    foo++; foo++;
-//    foo += 100;
-//    foo( 2 );
-
     /* we need a message queue for the thread running the shell in order to
      * receive potentially fast incoming networking packets */
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     puts("\n\tRIOT network stack example application\n");
+
+    xtimer_usleep(100000);
+
 
     /* start shell */
     puts("All up, running the shell now");

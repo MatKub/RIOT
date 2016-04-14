@@ -47,7 +47,7 @@ static int _recv(netdev2_t *dev, char* buf, int len)
 
     cc112x_t *cc112x = &((netdev2_cc112x_t*)dev)->cc112x;
 
-    cc112x_pkt_t *cc112x_pkt = &cc112x->pkt_buf.packet;
+    cc112x_pkt_t *cc112x_pkt = &cc112x->rx_pkt_buf.packet;
     if(cc112x_pkt->length > len) {
         return -ENOSPC;
     }

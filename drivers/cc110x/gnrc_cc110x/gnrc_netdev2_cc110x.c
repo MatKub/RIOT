@@ -17,7 +17,7 @@
 #include "net/gnrc/netdev2.h"
 #include "od.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
@@ -142,9 +142,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 
 
     gnrc_pktsnip_t *netif_hdr;
-    netif_hdr = gnrc_pktbuf_add(NULL, NULL,
-            sizeof(gnrc_netif_hdr_t) + 2*addr_len,
-            GNRC_NETTYPE_NETIF);
+    netif_hdr = gnrc_pktbuf_add(NULL, NULL, sizeof(gnrc_netif_hdr_t) + 2*addr_len, GNRC_NETTYPE_NETIF);
 
     if (netif_hdr == NULL) {
         DEBUG("gnrc_netdev2_cc110x: no space left in packet buffer\n");

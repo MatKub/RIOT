@@ -5,8 +5,8 @@
  *      Author: mateusz
  */
 
-#ifndef TESTS_GNRC_NETWORKING_CC112X_T_DEBUG_H_
-#define TESTS_GNRC_NETWORKING_CC112X_T_DEBUG_H_
+#ifndef _T_DEBUG_H_
+#define _T_DEBUG_H_
 
 #include "board.h"
 #include "periph/gpio.h"
@@ -26,4 +26,4 @@ void debug_timeref_init(void);
 void debug_timeref_reset(void);
 void debug_timestamp(void);
 
-#endif /* TESTS_GNRC_NETWORKING_CC112X_T_DEBUG_H_ */
+#endif /* _T_DEBUG_H_ */

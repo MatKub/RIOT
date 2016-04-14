@@ -1,8 +1,6 @@
 # name of your application
 APPLICATION = gnrc_networking
 
-USEMODULE_INCLUDES += $(RIOTBASE)/drivers/cc112x/include 
-
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 
@@ -32,10 +30,10 @@ USEMODULE += shell_commands
 USEMODULE += ps
 
 ifneq (,$(filter gnrc_netif_default,$(USEMODULE)))
-    USEMODULE += cc112x gnrc_netdev2 gnrc_cc112x
+    USEMODULE += cc110x gnrc_netdev2 gnrc_cc110x
 endif
 
-ifneq (,$(filter cc112x,$(USEMODULE)))
+ifneq (,$(filter cc110x,$(USEMODULE)))
     DISABLE_MODULE += gnrc_sixlowpan_iphc
 endif
 

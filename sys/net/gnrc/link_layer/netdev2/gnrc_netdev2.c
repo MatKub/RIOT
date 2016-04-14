@@ -32,8 +32,8 @@
 #include "net/gnrc/netdev2.h"
 #include "net/ethernet/hdr.h"
 
-#define ENABLE_DEBUG    (1)
-#include "debug.h"
+#define LOG_LEVEL LOG_WARNING
+#include "log.h"
 
 #if defined(MODULE_OD) && ENABLE_DEBUG
 #include "od.h"
@@ -53,6 +53,7 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event, void *data)
 {
     (void) data;
     gnrc_netdev2_t *gnrc_netdev2 = (gnrc_netdev2_t*) dev->isr_arg;
+    gnrc_pktsnip_t *pkt;
 
     if (event == NETDEV2_EVENT_ISR) {
         msg_t msg;
@@ -65,20 +66,18 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event, void *data)
         }
     }
     else {
-        DEBUG("gnrc_netdev2: event triggered -> %i\n", event);
+        LOG_DEBUG("gnrc_netdev2: event triggered -> %i\n", event);
         switch(event) {
             case NETDEV2_EVENT_RX_COMPLETE:
-                {
-                    gnrc_pktsnip_t *pkt = gnrc_netdev2->recv(gnrc_netdev2);
+            pkt = gnrc_netdev2->recv(gnrc_netdev2);
 
-                    if (pkt) {
-                        _pass_on_packet(pkt);
-                    }
+            if(pkt) {
+                _pass_on_packet(pkt);
+            }
 
-                    break;
-                }
+            break;
             default:
-                DEBUG("gnrc_netdev2: warning: unhandled event %u.\n", event);
+                LOG_WARNING("gnrc_netdev2: warning: unhandled event %u.\n", event);
         }
     }
 }
@@ -87,7 +86,7 @@ static void _pass_on_packet(gnrc_pktsnip_t *pkt)
 {
     /* throw away packet if no one is interested */
     if (!gnrc_netapi_dispatch_receive(pkt->type, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
-        DEBUG("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
+        LOG_WARNING("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
         gnrc_pktbuf_release(pkt);
         return;
     }
@@ -102,7 +101,7 @@ static void _pass_on_packet(gnrc_pktsnip_t *pkt)
  */
 static void *_gnrc_netdev2_thread(void *args)
 {
-    DEBUG("gnrc_netdev2: starting thread\n");
+    LOG_INFO("gnrc_netdev2: starting thread\n");
 
     gnrc_netdev2_t *gnrc_netdev2 = (gnrc_netdev2_t*) args;
     netdev2_t *dev = gnrc_netdev2->dev;
@@ -128,31 +127,31 @@ static void *_gnrc_netdev2_thread(void *args)
 
     /* start the event loop */
     while (1) {
-        DEBUG("gnrc_netdev2: waiting for incoming messages\n");
+        LOG_DEBUG("gnrc_netdev2: waiting for incoming messages\n");
         msg_receive(&msg);
         /* dispatch NETDEV and NETAPI messages */
         switch (msg.type) {
             case NETDEV2_MSG_TYPE_EVENT:
-                DEBUG("gnrc_netdev2: GNRC_NETDEV_MSG_TYPE_EVENT received\n");
+                LOG_DEBUG("gnrc_netdev2: GNRC_NETDEV_MSG_TYPE_EVENT received\n");
                 dev->driver->isr(dev);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SND:
-                DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_SND received\n");
+                LOG_DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_SND received\n");
                 gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t *)msg.content.ptr;
-                int ret;
-                do {
+                int ret = gnrc_netdev2->send(gnrc_netdev2, pkt);
+                while((-EBUSY) == ret){
                     xtimer_usleep(1000);
                     ret = gnrc_netdev2->send(gnrc_netdev2, pkt);
-                } while(-EBUSY == ret);
+                }
             break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 /* read incoming options */
                 opt = (gnrc_netapi_opt_t *)msg.content.ptr;
-                DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_SET received. opt=%s\n",
+                LOG_DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_SET received. opt=%s\n",
                         netopt2str(opt->opt));
                 /* set option for device driver */
                 res = dev->driver->set(dev, opt->opt, opt->data, opt->data_len);
-                DEBUG("gnrc_netdev2: response of netdev->set: %i\n", res);
+                LOG_DEBUG("gnrc_netdev2: response of netdev->set: %i\n", res);
                 /* send reply to calling thread */
                 reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
                 reply.content.value = (uint32_t)res;
@@ -161,18 +160,18 @@ static void *_gnrc_netdev2_thread(void *args)
             case GNRC_NETAPI_MSG_TYPE_GET:
                 /* read incoming options */
                 opt = (gnrc_netapi_opt_t *)msg.content.ptr;
-                DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_GET received. opt=%s\n",
+                LOG_DEBUG("gnrc_netdev2: GNRC_NETAPI_MSG_TYPE_GET received. opt=%s\n",
                         netopt2str(opt->opt));
                 /* get option from device driver */
                 res = dev->driver->get(dev, opt->opt, opt->data, opt->data_len);
-                DEBUG("gnrc_netdev2: response of netdev->get: %i\n", res);
+                LOG_DEBUG("gnrc_netdev2: response of netdev->get: %i\n", res);
                 /* send reply to calling thread */
                 reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
                 reply.content.value = (uint32_t)res;
                 msg_reply(&msg, &reply);
                 break;
             default:
-                DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
+                LOG_DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
                 break;
         }
     }
